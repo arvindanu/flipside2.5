@@ -1026,21 +1026,18 @@
 
   function drawHUD() {
     if (state === 'menu') return;
-    const u = 1 / sy;   // one css pixel, in world units
+    const u = 1 / sy;
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'left';
-    ctx.fillStyle = C.blush;
-    ctx.font = '800 ' + Math.round(24 * u) + 'px ' + FONT;
-    const txt = String(state === 'over' ? finalScore : score());
-    ctx.fillText(txt, hudL, hudY);
-    scoreRight = hudL + ctx.measureText(txt).width;
-    // best score lives in the bottom wall, opposite the boost button
+
+    // Best score stays in the top-left, with the integer directly below "Best".
     ctx.fillStyle = 'rgba(255,227,236,0.72)';
     ctx.font = '600 ' + Math.round(17 * u) + 'px ' + FONT;
     ctx.fillText('Best', hudL, hudY);
-  ctx.fillStyle = C.blush;
-  ctx.font = '800 ' + Math.round(20 * u) + 'px ' + FONT;
-  ctx.fillText(String(best), hudL, hudY + 22 * u);
+
+    ctx.fillStyle = C.blush;
+    ctx.font = '800 ' + Math.round(20 * u) + 'px ' + FONT;
+    ctx.fillText(String(best), hudL, hudY + 22 * u);
   }
 
   // Soul meter: top wall, between the score and the pause button.
@@ -1052,8 +1049,8 @@
     const label = 'SOUL';
     const labelW = ctx.measureText(label).width;
     const gap = 10 * ux;
-    const left = scoreRight + 14 * ux;
-    const right = W - hudR;                        // hudR already leaves room for the pause button
+    const left = hudL;
+    const right = W - hudR;
     const availCss = (right - left) * sx;
     const labelOn = availCss >= 150;
     const lw = labelOn ? labelW + gap : 0;
@@ -1099,6 +1096,14 @@
     ctx.strokeStyle = soulFlash > 0 ? 'rgba(255,255,255,' + (0.4 + soulFlash).toFixed(2) + ')' : 'rgba(255,227,236,0.5)';
     ctx.lineWidth = (soulFlash > 0 ? 3.5 : 2) * uy;
     ctx.stroke();
+
+    // Current score: centered directly below the Soul/fuel meter.
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = C.blush;
+    ctx.font = '800 ' + Math.round(24 * uy) + 'px ' + FONT;
+    const txt = String(state === 'over' ? finalScore : score());
+    ctx.fillText(txt, W / 2, cy + 28 * uy);
   }
 
   function drawFloaters() {
