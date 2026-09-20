@@ -93,7 +93,7 @@
   .boostbtn .ring circle { fill: none; stroke-width: 6; }
   .boostbtn .ring .track { stroke: rgba(255, 227, 236, 0.16); }
   .boostbtn .ring .prog { stroke: currentColor; stroke-linecap: round; stroke-dasharray: 289; stroke-dashoffset: 0; }
-  .boostbtn .ico { position: relative; width: 48%; height: 48%; }
+  .boostbtn .ico { position: relative; width: 36%; height: 36%; }
   .boostbtn .lbl { position: relative; font-size: 8px; font-weight: 800; letter-spacing: 0; line-height: 1; }
   .boostbtn.ready { color: var(--sun); border-color: var(--sun); animation: boostpulse 1.6s ease-out infinite; }
   .boostbtn.cool { color: rgba(255, 227, 236, 0.7); }
@@ -107,7 +107,7 @@
   @media (prefers-reduced-motion: reduce) { .boostbtn.ready { animation: none; } }
   @media (max-height: 520px) {
     .boostbtn .lbl { display: none; }
-    .boostbtn .ico { width: 62%; height: 62%; }
+    .boostbtn .ico { width: 52%; height: 52%; }
   }
 
   .overlay {
@@ -276,7 +276,7 @@
   let W = 0, H = 0, K = 1, TOP = BAND, BOT = 0, PX = 0, CORR = 0, FLIGHT = 0.4;
   let G = G0, VMAX = V0, KICK = KICK0;
   let scx = 1, scy = 1, sx = 1, sy = 1;            // canvas scale, and css px per logical px
-  let hudY = 24, hudL = 20, hudR = 60, scoreY = 54, insB = 0;
+  let hudY = 24, hudL = 20, hudR = 60, insB = 0;
   let lastCssW = 0, lastCssH = 0;
 
   function readInsets() {
@@ -325,15 +325,14 @@
     hudY = hudCssY / sy;
     hudL = (ins.l + 16) / sx;
     hudR = (ins.r + 10 + btn + 14) / sx;
-    scoreY = (hudCssY + btn + 10) / sy;
     pauseBtn.style.width = btn + 'px';
     pauseBtn.style.height = btn + 'px';
     pauseBtn.style.top = Math.round(hudCssY - btn / 2) + 'px';
     pauseBtn.style.right = Math.round(ins.r + 10) + 'px';
 
-    // bottom wall: larger boost button on the right
+    // bottom row: best score on the left, boost button on the right
     const bandBotCss = (H - BOT) * sy;
-    const bb = clamp(Math.round(bandBotCss * 1.05), 42, 62);
+    const bb = clamp(Math.round(bandBotCss * 0.8), 30, 46);
     const botOffCss = clamp(Math.min(bandBotCss / 2, 22 + bb / 2), bb / 2 + 4, Math.max(bb / 2 + 4, bandBotCss - ins.b - bb / 2 - 8));
     botY = BOT + botOffCss / sy;
     boostBtn.style.width = bb + 'px';
@@ -370,7 +369,6 @@
     cursor = W + 220 * K; nextSide = 'floor'; sameRun = 0;
     shake = 0; isNewBest = false; overlayReady = false;
     soul = 100; soulFlash = 0; lowWarned = false; deathReason = 'block'; lastMegaT = -999;
-    stopSoulSiren();
     floaters = [];
     boostMode = 'off'; boostT = 0; boostUses = 0; boostCombo = 0; boostGrace = 0; boostStreamX = 0; speedMul = 1;
     boostReady = BOOST_FIRST_READY <= 0;
@@ -519,34 +517,6 @@
   const sfxSoulOut = () => beep(360, 45, 0.75, 'triangle', 0.12);
   // Soul is getting low.
   const sfxLow = () => beep(540, 400, 0.14, 'sine', 0.1);
-
-  // Funny pixel-style low-fuel siren.
-  // It repeats only while the soul meter is in its blinking low-fuel state.
-  let soulSirenTimer = null;
-  let soulSirenStep = 0;
-
-  const sfxSoulSirenPulse = () => {
-    if (!soundOn || state !== 'playing' || soul >= 25) return;
-    const high = soulSirenStep % 2 === 0;
-    soulSirenStep++;
-    if (high) beep(980, 760, 0.075, 'square', 0.07);
-    else beep(620, 480, 0.075, 'square', 0.07);
-  };
-
-  function startSoulSiren() {
-    if (soulSirenTimer || !soundOn) return;
-    soulSirenStep = 0;
-    sfxSoulSirenPulse();
-    soulSirenTimer = setInterval(sfxSoulSirenPulse, 220);
-  }
-
-  function stopSoulSiren() {
-    if (soulSirenTimer) {
-      clearInterval(soulSirenTimer);
-      soulSirenTimer = null;
-    }
-    soulSirenStep = 0;
-  }
   // Boost: launch whoosh, a rising blip for each rocket coin, and a chime when it refreshes.
   const sfxBoost = () => {
     beep(160, 720, 0.45, 'sawtooth', 0.08);
@@ -778,7 +748,6 @@
   }
 
   function crash(reason) {
-    stopSoulSiren();
     state = 'over';
     deathReason = reason || 'block';
     const s = score();
@@ -863,18 +832,8 @@
     }
 
     // low-soul warning, then out of soul
-    if (soul < 25 && !lowWarned) {
-      lowWarned = true;
-      sfxLow();
-      startSoulSiren();
-    }
-    if (soul >= 25) stopSoulSiren();
-    if (soul <= 0) {
-      soul = 0;
-      stopSoulSiren();
-      crash('soul');
-      return;
-    }
+    if (soul < 25 && !lowWarned) { lowWarned = true; sfxLow(); }
+    if (soul <= 0) { soul = 0; crash('soul'); return; }
   }
 
   // ---------- drawing ----------
@@ -1067,22 +1026,21 @@
 
   function drawHUD() {
     if (state === 'menu') return;
-
-    const u = 1 / sy;
+    const u = 1 / sy;   // one css pixel, in world units
     ctx.textBaseline = 'middle';
-
-    // High score: top wall, left side.
     ctx.textAlign = 'left';
-    ctx.fillStyle = 'rgba(255,227,236,0.72)';
-    ctx.font = '600 ' + Math.round(17 * u) + 'px ' + FONT;
-    ctx.fillText('Best ' + best, hudL, hudY);
-
-    // Current score: below the soul meter.
-    ctx.textAlign = 'center';
     ctx.fillStyle = C.blush;
     ctx.font = '800 ' + Math.round(24 * u) + 'px ' + FONT;
     const txt = String(state === 'over' ? finalScore : score());
-    ctx.fillText(txt, W / 2, scoreY);
+    ctx.fillText(txt, hudL, hudY);
+    scoreRight = hudL + ctx.measureText(txt).width;
+    // best score lives in the bottom wall, opposite the boost button
+    ctx.fillStyle = 'rgba(255,227,236,0.72)';
+    ctx.font = '600 ' + Math.round(17 * u) + 'px ' + FONT;
+    ctx.fillText('Best', hudL, hudY);
+  ctx.fillStyle = C.blush;
+  ctx.font = '800 ' + Math.round(20 * u) + 'px ' + FONT;
+  ctx.fillText(String(best), hudL, hudY + 22 * u);
   }
 
   // Soul meter: top wall, between the score and the pause button.
@@ -1094,7 +1052,7 @@
     const label = 'SOUL';
     const labelW = ctx.measureText(label).width;
     const gap = 10 * ux;
-    const left = hudL;
+    const left = scoreRight + 14 * ux;
     const right = W - hudR;                        // hudR already leaves room for the pause button
     const availCss = (right - left) * sx;
     const labelOn = availCss >= 150;
